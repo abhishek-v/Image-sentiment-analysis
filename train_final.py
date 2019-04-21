@@ -155,7 +155,7 @@ model = tf.keras.models.Sequential(
         tf.keras.layers.Dense(256, activation="relu",kernel_regularizer=tf.keras.regularizers.l2(l=0.1)),
         tf.keras.layers.Dropout(0.4),
         tf.keras.layers.Dense(128, activation="relu"),
-        tf.keras.layers.Dense(3, activation="softmax")
+        tf.keras.layers.Dense(3, activation="softmax",kernel_regularizer=tf.keras.regularizers.l2(l=0.01))
     ]
 )
 

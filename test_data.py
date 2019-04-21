@@ -4,6 +4,8 @@ Create dictionaries for all three types of metrics. Use image name as key and se
 
 import numpy as np
 import tensorflow as tf
+import os
+import cv2
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 tf.enable_eager_execution()
@@ -39,11 +41,15 @@ test_file_names = []
 for image in images:
     img = cv2.imread(image)
     res = cv2.resize(img, dsize=(224,224), interpolation=cv2.INTER_CUBIC)
-    test_set.append(res)
+    resize_image = res.reshape([-1, 224, 224, 3])
+    test_set.append(resize_image)
     test_file_names.append(image)
+
 
 test_set = np.array(test_set)
 test_set = test_set/255
+
+os.chdir("..")
 
 #define model
 in_width, in_height, in_channels = 224, 224, 3
@@ -52,6 +58,10 @@ pretrained_resnet = tf.keras.applications.ResNet50(
     include_top=False,
     input_shape=(in_width, in_height, in_channels),
 )
+
+
+for layer in pretrained_resnet.layers:
+    layer.trainable = False
 
 model = tf.keras.models.Sequential(
     [
@@ -64,22 +74,31 @@ model.load_weights("weights_best.hdf5")
 
 three_agree_count = four_agree_count = five_agree_count = 0
 #predict confidence scores for images
-count = 0
-for image in test_set:
-    print("Image number:",count)
+
+for i in range(len(test_set)):
+    print("Image number:",i)
     op = -1
-    conf_scores = model.predict(image)
+    conf_scores = model.predict(test_set[i])
     print(conf_scores)
     #(index: negative = 0, neutral = 1, positive = 2)
     #NEED TO TEST THIS
-    if(conf_scores[0] > conf_scores[2]):
+    if(conf_scores[0][0] > conf_scores[0][2]):
         op = 0
     else:
         op = 1
-
-    three_agree_actual_op = three[image]
-    four_agree_actual_op = four[image]
-    five_agree_actual_op = five[image]
+    print(test_file_names[i])
+    try:
+        three_agree_actual_op = three[test_file_names[i]]
+    except:
+        pass
+    try:
+        four_agree_actual_op = four[test_file_names[i]]
+    except:
+        pass
+    try:
+        five_agree_actual_op = five[test_file_names[i]]
+    except:
+        pass
 
     if(three_agree_actual_op == op):
         three_agree_count = three_agree_count + 1
@@ -90,7 +109,11 @@ for image in test_set:
     if(five_agree_actual_op == op):
         five_agree_count = five_agree_count + 1
 
-    count = count + 1
-
 print("Three agree percentage:")
-print(three_agree_count/three_agree)
+print((three_agree_count/len(three.keys()))*100)
+
+print("Four agree percentage:")
+print((four_agree_count/len(four.keys()))*100)
+
+print("Five agree percentage:")
+print((five_agree_count/len(five.keys()))*100)

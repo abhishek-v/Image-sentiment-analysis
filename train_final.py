@@ -52,7 +52,7 @@ with open('./t4sa_text_sentiment.tsv') as tsvfile:
 #create validation set
 val_images = []
 val_labels = []
-indices = random.sample(range(1, len(all_image_paths)), 1500)
+indices = random.sample(range(1, len(all_image_paths)), 5200 )
 for index in indices:
     try:
         img_name = all_image_paths.pop(index)
@@ -87,7 +87,12 @@ for fpath in all_image_paths:
     temp = d[fname]
     b = [1 if x == max(temp) else 0 for x in temp]
     all_image_labels.append(b)
-
+    if(b[0] == 1):
+        pos = pos + 1
+    elif(b[1] == 1):
+        neu = neu + 1
+    else:
+        neg = neg + 1
 
 # for image_path in all_image_paths:
 #     print(all_image_paths)
@@ -123,7 +128,7 @@ def load_and_preprocess_from_path_label(path, label):
 
 image_label_ds = ds.map(load_and_preprocess_from_path_label)
 print(image_label_ds)
-ds = image_label_ds.shuffle(buffer_size=15000)
+ds = image_label_ds.shuffle(buffer_size=5000)
 ds = ds.repeat()
 ds = ds.batch(BATCH_SIZE)
 # `prefetch` lets the dataset fetch batches, in the background while the model is training.
@@ -159,4 +164,3 @@ pickle.dump(history.history['mean_absolute_error'],op)
 pickle.dump(history.history['mean_squared_error'],op)
 pickle.dump(history.history['acc'],op)
 op.close()
-

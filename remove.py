@@ -1,3 +1,4 @@
+#769271797913051136-1.jpg was a corrupt file
 import pickle
 import os
 import cv2

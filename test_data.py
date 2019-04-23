@@ -6,6 +6,8 @@ import numpy as np
 import tensorflow as tf
 import os
 import cv2
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 tf.enable_eager_execution()
@@ -77,6 +79,12 @@ if(int(ip) == 1):
     for layer in pretrained_resnet.layers:
         layer.trainable = False
     model.load_weights("weights_best_densenet.hdf5")
+    f = open("results_densenet.txt","w")
+    f.write("DenseNet121 Results:\n")
+    f.write("0 indicates negative polarity output, 1 indicates positive polarity\n")
+    f.write("For the \"agree metrics\", -1 means that the image does not exist for that metric, 1 means positive and 0 means negative\n ")
+    f.write("Image name\tPredicted Sentiment Polarity\tFive Agree\tFour agree\tThree agree")
+
 else:
     print("Using VGG19")
     pretrained_resnet = tf.keras.applications.VGG19(
@@ -94,9 +102,17 @@ else:
     for layer in pretrained_resnet.layers:
         layer.trainable = False
     model.load_weights("weights_best_vgg.hdf5")
+    f = open("results_vgg19.txt","w")
+    f.write("VGG19 Results:\n")
+    f.write("0 indicates negative polarity output, 1 indicates positive polarity\n")
+    f.write("For the \"agree metrics\", -1 means that the image does not exist for that metric, 1 means positive and 0 means negative\n ")
+    f.write("Image name\tPredicted Sentiment Polarity\tFive Agree\tFour agree\tThree agree")
 
+ip2 = int(input("Run in interactive mode? 1 for yes, 0 for no: "))
 three_agree_count = four_agree_count = five_agree_count = 0
 #predict confidence scores for images
+
+
 
 for i in range(len(test_set)):
     print("Image number:",i)
@@ -124,6 +140,15 @@ for i in range(len(test_set)):
     except:
         pass
 
+    f.write(test_file_names[i]+"\t"+str(op)+"\t"+str(five_agree_actual_op)+"\t"+str(four_agree_actual_op)+"\t"+str(three_agree_actual_op)+"\n")
+
+    if(ip2 == 1):
+        print("Ground truth: (5agree-4agree-3agree):  "+str(five_agree_actual_op)+":"+str(four_agree_actual_op)+":"+str(three_agree_actual_op))
+        print("Predicted label: "+str(op))
+        fname = "Agg_AMT_Candidates/"+test_file_names[i]
+        img=mpimg.imread(fname)
+        imgplot = plt.imshow(img)
+
     if(three_agree_actual_op == op):
         three_agree_count = three_agree_count + 1
 
@@ -133,9 +158,9 @@ for i in range(len(test_set)):
     if(five_agree_actual_op == op):
         five_agree_count = five_agree_count + 1
 
-print(three_agree_count)
-print(four_agree_count)
-print(five_agree_count)
+print("Three agree count",three_agree_count)
+print("Four agree count",four_agree_count)
+print("Five agree count",five_agree_count)
 
 print("Three agree percentage:")
 print((three_agree_count/len(three.keys()))*100)
@@ -145,3 +170,7 @@ print((four_agree_count/len(four.keys()))*100)
 
 print("Five agree percentage:")
 print((five_agree_count/len(five.keys()))*100)
+
+f.write("\n\nThree agree percentage:"+str((three_agree_count/len(three.keys()))*100)+"\n")
+f.write("Four agree percentage:"+str((four_agree_count/len(four.keys()))*100)+"\n")
+f.write("Five agree percentage:"+str((five_agree_count/len(five.keys()))*100)+"\n")

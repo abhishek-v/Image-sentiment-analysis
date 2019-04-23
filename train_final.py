@@ -49,15 +49,16 @@ with open('./t4sa_text_sentiment.tsv') as tsvfile:
 
 
 #create validation set
-val_images = []
+all_val_image_paths = []
 val_labels = []
-indices = random.sample(range(1, len(all_image_paths)), 3200 )
+indices = random.sample(range(1, len(all_image_paths)), 5000 )
 for index in indices:
     try:
         img_name = all_image_paths.pop(index)
-        img = cv2.imread(img_name)
-        res = cv2.resize(img, dsize=(224,224), interpolation=cv2.INTER_CUBIC)
-        val_images.append(res)
+        # img = cv2.imread(img_name)
+        # res = cv2.resize(img, dsize=(224,224), interpolation=cv2.INTER_CUBIC)
+        # val_images.append(res)
+        all_val_image_paths.append(img_name)
         fname = img_name.split("/")[-1]
         fname = fname.rstrip(".jpg")
         fname = fname.split("-")[0]
@@ -67,11 +68,11 @@ for index in indices:
     except:
         continue
 
-val_images = np.array(val_images,dtype=np.uint8)
-val_labels = np.array(val_labels)
+# val_images = np.array(val_images,dtype=np.uint8)
+# val_labels = np.array(val_labels)
 
-val_images = val_images/255
-print("Number of examples in validation set: ",len(val_images))
+# val_images = val_images/255
+# print("Number of examples in validation set: ",len(val_images))
 
 
 image_count = len(all_image_paths)
@@ -100,19 +101,6 @@ print("pos,neu,neg",pos,neu,neg)
 
 path_ds = tf.data.Dataset.from_tensor_slices(all_image_paths)
 image_ds = path_ds.map(load_and_preprocess_image, num_parallel_calls=AUTOTUNE)
-#tf.cast(image_ds, tf.float32)
-# import matplotlib.pyplot as plt
-#
-# plt.figure(figsize=(8,8))
-# for n,image in enumerate(image_ds.take(4)):
-#   plt.subplot(2,2,n+1)
-#   plt.imshow(image)
-#   plt.grid(False)
-#   plt.xticks([])
-#   plt.yticks([])
-# plt.show()
-
-
 label_ds = tf.data.Dataset.from_tensor_slices(tf.cast(all_image_labels, tf.int64))
 image_label_ds = tf.data.Dataset.zip((image_ds, label_ds))
 print('image shape: ', image_label_ds.output_shapes[0])
@@ -129,14 +117,50 @@ def load_and_preprocess_from_path_label(path, label):
 
 image_label_ds = ds.map(load_and_preprocess_from_path_label)
 print(image_label_ds)
-ds = image_label_ds.shuffle(buffer_size=3000)
+ds = image_label_ds.shuffle(buffer_size=4000)
 ds = ds.repeat()
 ds = ds.batch(BATCH_SIZE)
 # `prefetch` lets the dataset fetch batches, in the background while the model is training.
 ds = ds.prefetch(buffer_size=AUTOTUNE)
 
 
-pretrained_resnet = tf.keras.applications.ResNet50(
+
+'''for val image'''
+path_ds_val = tf.data.Dataset.from_tensor_slices(all_val_image_paths)
+image_ds_val = path_ds_val.map(load_and_preprocess_image, num_parallel_calls=AUTOTUNE)
+label_ds_val = tf.data.Dataset.from_tensor_slices(tf.cast(val_labels, tf.int64))
+image_label_ds_val = tf.data.Dataset.zip((image_ds_val, label_ds_val))
+print('image shape val: ', image_label_ds_val.output_shapes[0])
+print('label shape val: ', image_label_ds_val.output_shapes[1])
+print('types val: ', image_label_ds_val.output_types)
+print()
+print(image_label_ds_val)
+
+ds_val = tf.data.Dataset.from_tensor_slices((all_val_image_paths, val_labels))
+
+image_label_ds_val = ds_val.map(load_and_preprocess_from_path_label)
+print(image_label_ds_val)
+ds_val = image_label_ds_val.shuffle(buffer_size=1)
+ds_val = ds_val.repeat()
+ds_val = ds_val.batch(BATCH_SIZE)
+# `prefetch` lets the dataset fetch batches, in the background while the model is training.
+ds_val = ds_val.prefetch(buffer_size=AUTOTUNE)
+
+
+'''
+ds_val = tf.data.Dataset.from_tensor_slices((all_val_image_paths, val_labels))
+
+image_label_ds_val = ds_val.map(load_and_preprocess_from_path_label)
+print(image_label_ds_val)
+ds_val = image_label_ds_val.shuffle(buffer_size=1)
+ds_val = ds_val.repeat()
+ds_val = ds_val.batch(BATCH_SIZE)
+# `prefetch` lets the dataset fetch batches, in the background while the model is training.
+ds_val = ds_val.prefetch(buffer_size=AUTOTUNE)
+'''
+
+
+pretrained_resnet = tf.keras.applications.VGG19(
     weights="imagenet",
     include_top=False,
     input_shape=(in_width, in_height, in_channels),
@@ -149,13 +173,13 @@ model = tf.keras.models.Sequential(
     [
         pretrained_resnet,
         tf.keras.layers.Flatten(),
-        tf.keras.layers.Dropout(0.3),
-        tf.keras.layers.Dense(128, activation="relu",kernel_regularizer=tf.keras.regularizers.l2(l=0.1)),
-        tf.keras.layers.Dropout(0.3),
-        tf.keras.layers.Dense(256, activation="relu",kernel_regularizer=tf.keras.regularizers.l2(l=0.1)),
+        #tf.keras.layers.Dropout(0.3),
+        #tf.keras.layers.Dense(128, activation="relu",kernel_regularizer=tf.keras.regularizers.l2(l=0.1)),
+        #tf.keras.layers.Dropout(0.3),
+        #tf.keras.layers.Dense(512, activation="relu",kernel_regularizer=tf.keras.regularizers.l2(l=0.1)),
         tf.keras.layers.Dropout(0.4),
-        tf.keras.layers.Dense(128, activation="relu"),
-        tf.keras.layers.Dense(3, activation="softmax")
+        #tf.keras.layers.Dense(128, activation="relu"),
+        tf.keras.layers.Dense(3, activation="softmax",kernel_regularizer=tf.keras.regularizers.l2(l=0.1))
     ]
 )
 
@@ -165,7 +189,7 @@ callbacks_list = [checkpoint]
 
 image_batch, label_batch = next(iter(ds))
 model.compile(loss='categorical_crossentropy',optimizer=Adam(lr=0.00001),metrics=['acc','mse', 'mae'])
-history = model.fit(ds, epochs=1, steps_per_epoch = 500, callbacks=callbacks_list, batch_size=32,nb_epoch=50,verbose=1,validation_data=(val_images,val_labels))
+history = model.fit(ds, steps_per_epoch = 500, callbacks=callbacks_list, batch_size=32,nb_epoch=50,verbose=1,validation_data=ds_val,validation_steps=100)
 op = open("stats","wb")
 pickle.dump(history.history['mean_absolute_error'],op)
 pickle.dump(history.history['mean_squared_error'],op)

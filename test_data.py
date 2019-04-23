@@ -45,7 +45,11 @@ for image in images:
     test_set.append(resize_image)
     test_file_names.append(image)
 
-
+# print(len(test_set))
+# print(len(three.keys()))
+# print(len(four.keys()))
+# print(len(five.keys()))
+# exit(1)
 test_set = np.array(test_set)
 test_set = test_set/255
 
@@ -53,24 +57,43 @@ os.chdir("..")
 
 #define model
 in_width, in_height, in_channels = 224, 224, 3
-pretrained_resnet = tf.keras.applications.ResNet50(
-    weights="imagenet",
-    include_top=False,
-    input_shape=(in_width, in_height, in_channels),
-)
 
 
-for layer in pretrained_resnet.layers:
-    layer.trainable = False
-
-model = tf.keras.models.Sequential(
-    [
-        pretrained_resnet,
-        tf.keras.layers.Flatten(),
-        tf.keras.layers.Dense(3, activation="softmax")
-    ]
-)
-model.load_weights("weights_best.hdf5")
+ip = input("Which model to use? 1 for DenseNet121, 2 for VGG19: ")
+if(int(ip) == 1):
+    print("Using densenet")
+    pretrained_resnet = tf.keras.applications.DenseNet121(
+        weights="imagenet",
+        include_top=False,
+        input_shape=(in_width, in_height, in_channels),
+    )
+    model = tf.keras.models.Sequential(
+        [
+            pretrained_resnet,
+            tf.keras.layers.Flatten(),
+            tf.keras.layers.Dense(3, activation="softmax",kernel_regularizer=tf.keras.regularizers.l2(l=0.1))
+        ]
+    )
+    for layer in pretrained_resnet.layers:
+        layer.trainable = False
+    model.load_weights("weights_best_densenet.hdf5")
+else:
+    print("Using VGG19")
+    pretrained_resnet = tf.keras.applications.VGG19(
+        weights="imagenet",
+        include_top=False,
+        input_shape=(in_width, in_height, in_channels),
+    )
+    model = tf.keras.models.Sequential(
+        [
+            pretrained_resnet,
+            tf.keras.layers.Flatten(),
+            tf.keras.layers.Dense(3, activation="softmax",kernel_regularizer=tf.keras.regularizers.l2(l=0.1))
+        ]
+    )
+    for layer in pretrained_resnet.layers:
+        layer.trainable = False
+    model.load_weights("weights_best_vgg.hdf5")
 
 three_agree_count = four_agree_count = five_agree_count = 0
 #predict confidence scores for images
@@ -87,6 +110,7 @@ for i in range(len(test_set)):
     else:
         op = 1
     print(test_file_names[i])
+    three_agree_actual_op = four_agree_actual_op = five_agree_actual_op = -1
     try:
         three_agree_actual_op = three[test_file_names[i]]
     except:
@@ -108,6 +132,10 @@ for i in range(len(test_set)):
 
     if(five_agree_actual_op == op):
         five_agree_count = five_agree_count + 1
+
+print(three_agree_count)
+print(four_agree_count)
+print(five_agree_count)
 
 print("Three agree percentage:")
 print((three_agree_count/len(three.keys()))*100)

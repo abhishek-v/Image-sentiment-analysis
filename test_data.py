@@ -82,8 +82,8 @@ if(int(ip) == 1):
     f = open("results_densenet.txt","w")
     f.write("DenseNet121 Results:\n")
     f.write("0 indicates negative polarity output, 1 indicates positive polarity\n")
-    f.write("For the \"agree metrics\", -1 means that the image does not exist for that metric, 1 means positive and 0 means negative\n ")
-    f.write("Image name\tPredicted Sentiment Polarity\tFive Agree\tFour agree\tThree agree")
+    f.write("For the \"agree metrics\", -1 means that the image does not exist for that metric, 1 means positive and 0 means negative\n")
+    f.write("Image name\t-Predicted Sentiment Polarity-\tFive Agree-\tFour agree-\tThree agree\n")
 
 else:
     print("Using VGG19")
@@ -105,8 +105,8 @@ else:
     f = open("results_vgg19.txt","w")
     f.write("VGG19 Results:\n")
     f.write("0 indicates negative polarity output, 1 indicates positive polarity\n")
-    f.write("For the \"agree metrics\", -1 means that the image does not exist for that metric, 1 means positive and 0 means negative\n ")
-    f.write("Image name\tPredicted Sentiment Polarity\tFive Agree\tFour agree\tThree agree")
+    f.write("For the \"agree metrics\", -1 means that the image does not exist for that metric, 1 means positive and 0 means negative\n")
+    f.write("Image name\t-Predicted Sentiment Polarity-\tFive Agree-\tFour agree-\tThree agree\n")
 
 ip2 = int(input("Run in interactive mode? 1 for yes, 0 for no: "))
 three_agree_count = four_agree_count = five_agree_count = 0

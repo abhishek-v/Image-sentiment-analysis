@@ -12,6 +12,7 @@ After downloading all files, unzip the "Agg_AMT_Candidates.zip" and "data.zip" f
 
 root
 |
+|__ README.txt
 |__ train_final.py
 |__ train_final2.py
 |__ test_data.py

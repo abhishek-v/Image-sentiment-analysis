@@ -59,3 +59,4 @@ To test the models, run the python file: test_data.py
                         python3 test_data.py
 
   You need to input 1 for testing DenseNet121 and input 2 for testing VGG19
+  You can choose to view images one by one by using interactive mode (input 1). Or to just evaluate all images without displaying them, input 0

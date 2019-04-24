@@ -148,6 +148,7 @@ for i in range(len(test_set)):
         fname = "Agg_AMT_Candidates/"+test_file_names[i]
         img=mpimg.imread(fname)
         imgplot = plt.imshow(img)
+        plt.show()
 
     if(three_agree_actual_op == op):
         three_agree_count = three_agree_count + 1
